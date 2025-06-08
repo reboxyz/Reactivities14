@@ -1,4 +1,6 @@
 using System.Reflection;
+using Application.Activities;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 using Serilog;
@@ -37,6 +39,8 @@ builder.Services.AddCors(opt =>
     });
 });
 
+builder.Services.AddMediatR(typeof(List.Handler).Assembly);
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -51,6 +55,8 @@ using (var scope = app.Services.CreateScope())
         {
             await dbContext.Database.MigrateAsync();
         }
+
+        await Seed.SeedData(dbContext);
     }
     catch (Exception ex)
     {
