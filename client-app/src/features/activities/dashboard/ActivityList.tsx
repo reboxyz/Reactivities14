@@ -11,19 +11,28 @@ import {
   Segment,
 } from "semantic-ui-react";
 import { IActivity } from "../../../app/models/activity";
-import React from "react";
+import React, { useState } from "react";
 
 interface IProps {
   activities: IActivity[];
   selectActivity(id: string): void;
   deleteActivity: (id: string) => void;
+  submitting: boolean;
 }
 
 const ActivityList: React.FC<IProps> = ({
   activities,
   selectActivity,
   deleteActivity,
+  submitting,
 }) => {
+  const [target, setTarget] = useState("");
+
+  const handleDelete = (id: string) => {
+    setTarget(id);
+    deleteActivity(id);
+  };
+
   return (
     <Segment clearing>
       <ItemGroup divided>
@@ -46,10 +55,11 @@ const ActivityList: React.FC<IProps> = ({
                   color="blue"
                 />
                 <Button
-                  onClick={() => deleteActivity(activity.id)}
+                  onClick={() => handleDelete(activity.id)}
                   floated="right"
                   content="Delete"
                   color="red"
+                  loading={submitting && target === activity.id}
                 />
                 <Label basic content={activity.category} />
               </ItemExtra>
