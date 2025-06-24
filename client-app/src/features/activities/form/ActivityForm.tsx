@@ -2,22 +2,20 @@ import { Button, Form, Segment } from "semantic-ui-react";
 import { IActivity } from "../../../app/models/activity";
 import { useState } from "react";
 import { v4 as uuid } from "uuid";
+import { observer } from "mobx-react-lite";
+import { useStore } from "../../../app/stores/store";
 
 interface IProps {
-  setEditMode: (editMode: boolean) => void;
   activity: IActivity;
-  createActivity: (activity: IActivity) => void;
-  editActivity: (activity: IActivity) => void;
-  submitting: boolean;
 }
 
 const ActivityForm: React.FC<IProps> = ({
-  setEditMode,
   activity: initialFormState, // Note! rename 'activity' to 'initialFormState'
-  createActivity,
-  editActivity,
-  submitting,
 }) => {
+  const { activityStore } = useStore();
+  const { createActivity, editActivity, submitting, cancelFormOpen } =
+    activityStore;
+
   const initializeForm = () => {
     if (initialFormState) {
       return initialFormState;
@@ -110,11 +108,11 @@ const ActivityForm: React.FC<IProps> = ({
           floated="right"
           type="button"
           content="Cancel"
-          onClick={() => setEditMode(false)}
+          onClick={() => cancelFormOpen()}
         />
       </Form>
     </Segment>
   );
 };
 
-export default ActivityForm;
+export default observer(ActivityForm);

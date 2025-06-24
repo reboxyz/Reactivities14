@@ -10,33 +10,25 @@ import {
   Label,
   Segment,
 } from "semantic-ui-react";
-import { IActivity } from "../../../app/models/activity";
-import React, { useState } from "react";
 
-interface IProps {
-  activities: IActivity[];
-  selectActivity(id: string): void;
-  deleteActivity: (id: string) => void;
-  submitting: boolean;
-}
+import React from "react";
+import { observer } from "mobx-react-lite";
+import { useStore } from "../../../app/stores/store";
 
-const ActivityList: React.FC<IProps> = ({
-  activities,
-  selectActivity,
-  deleteActivity,
-  submitting,
-}) => {
-  const [target, setTarget] = useState("");
-
-  const handleDelete = (id: string) => {
-    setTarget(id);
-    deleteActivity(id);
-  };
+const ActivityList: React.FC = () => {
+  const { activityStore } = useStore();
+  const {
+    activitiesByDate,
+    selectActivity,
+    deleteActivity,
+    submitting,
+    target,
+  } = activityStore;
 
   return (
     <Segment clearing>
       <ItemGroup divided>
-        {activities.map((activity) => (
+        {activitiesByDate.map((activity) => (
           <Item key={activity.id}>
             <ItemContent>
               <ItemHeader as="a">{activity.title}</ItemHeader>
@@ -55,7 +47,7 @@ const ActivityList: React.FC<IProps> = ({
                   color="blue"
                 />
                 <Button
-                  onClick={() => handleDelete(activity.id)}
+                  onClick={() => deleteActivity(activity.id)}
                   floated="right"
                   content="Delete"
                   color="red"
@@ -71,4 +63,4 @@ const ActivityList: React.FC<IProps> = ({
   );
 };
 
-export default ActivityList;
+export default observer(ActivityList);
