@@ -9,28 +9,39 @@ import {
 } from "semantic-ui-react";
 import { observer } from "mobx-react-lite";
 import { useStore } from "../../../app/stores/store";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { useEffect } from "react";
+import LoadingComponent from "../../../app/layout/LoadingComponent";
 
 const ActivityDetails: React.FC = () => {
   const { activityStore } = useStore();
-  const {
-    selectedActivity: activity,
-    openEditForm,
-    cancelSelectedActivity,
-  } = activityStore;
+  const { activity, loadActivity, loadingInitial } = activityStore;
+
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (id) {
+      loadActivity(id);
+    }
+  }, [id, loadActivity]);
+
+  if (loadingInitial || !activity)
+    return <LoadingComponent content="Loading..." />;
 
   return (
     <Card fluid>
       <Image
-        src={`/assets/categoryImages/${activity!.category}.jpg`}
+        src={`/assets/categoryImages/${activity.category}.jpg`}
         wrapped
         ui={false}
       />
       <CardContent>
-        <CardHeader>{activity!.title}</CardHeader>
+        <CardHeader>{activity.title}</CardHeader>
         <CardMeta>
-          <span>{new Date(activity!.date).toISOString()}</span>
+          <span>{new Date(activity.date).toISOString()}</span>
         </CardMeta>
-        <CardDescription>{activity!.description}</CardDescription>
+        <CardDescription>{activity.description}</CardDescription>
       </CardContent>
       <CardContent extra>
         <Button.Group widths={2}>
@@ -38,13 +49,14 @@ const ActivityDetails: React.FC = () => {
             basic
             color="blue"
             content="Edit"
-            onClick={() => openEditForm(activity!.id)}
+            as={Link}
+            to={`/manage/${activity.id}`}
           />
           <Button
             basic
             color="grey"
             content="Cancel"
-            onClick={() => cancelSelectedActivity()}
+            onClick={() => navigate("/activities")}
           />
         </Button.Group>
       </CardContent>

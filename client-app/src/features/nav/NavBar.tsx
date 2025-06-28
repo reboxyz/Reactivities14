@@ -1,15 +1,12 @@
 import { observer } from "mobx-react-lite";
 import { Button, Container, Menu, MenuItem } from "semantic-ui-react";
-import { useStore } from "../../app/stores/store";
+import { NavLink } from "react-router-dom";
 
 const NavBar: React.FC = () => {
-  const { activityStore } = useStore();
-  const { openCreateForm } = activityStore;
-
   return (
     <Menu fixed="top" inverted>
       <Container>
-        <MenuItem header>
+        <MenuItem header as={NavLink} to="/">
           <img
             src="/assets/logo.png"
             alt="logo"
@@ -17,12 +14,14 @@ const NavBar: React.FC = () => {
           />
           Reactivities
         </MenuItem>
-        <MenuItem name="Activities" />
+        <MenuItem name="Activities" as={NavLink} to="/activities" />
         <MenuItem>
           <Button
+            as={NavLink}
+            to="/createActivity"
             positive
             content="Create Activity"
-            onClick={() => openCreateForm()}
+            //reloadDocument // Very Important! Use this if you want to force reload
           />
         </MenuItem>
       </Container>

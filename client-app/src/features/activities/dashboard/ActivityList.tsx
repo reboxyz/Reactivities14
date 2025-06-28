@@ -10,8 +10,7 @@ import {
   Label,
   Segment,
 } from "semantic-ui-react";
-
-import React from "react";
+import { Link } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { useStore } from "../../../app/stores/store";
 
@@ -19,7 +18,7 @@ const ActivityList: React.FC = () => {
   const { activityStore } = useStore();
   const {
     activitiesByDate,
-    selectActivity,
+
     deleteActivity,
     submitting,
     target,
@@ -41,7 +40,8 @@ const ActivityList: React.FC = () => {
               </ItemDescription>
               <ItemExtra>
                 <Button
-                  onClick={() => selectActivity(activity.id)}
+                  as={Link}
+                  to={`/activities/${activity.id}`}
                   floated="right"
                   content="View"
                   color="blue"

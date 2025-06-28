@@ -1,38 +1,45 @@
 import { Button, Form, Segment } from "semantic-ui-react";
 import { IActivity } from "../../../app/models/activity";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { v4 as uuid } from "uuid";
 import { observer } from "mobx-react-lite";
 import { useStore } from "../../../app/stores/store";
+import { useNavigate, useParams } from "react-router-dom";
 
-interface IProps {
-  activity: IActivity;
-}
-
-const ActivityForm: React.FC<IProps> = ({
-  activity: initialFormState, // Note! rename 'activity' to 'initialFormState'
-}) => {
+const ActivityForm: React.FC = () => {
   const { activityStore } = useStore();
-  const { createActivity, editActivity, submitting, cancelFormOpen } =
-    activityStore;
+  const navigate = useNavigate();
 
-  const initializeForm = () => {
-    if (initialFormState) {
-      return initialFormState;
-    } else {
-      return {
-        id: "",
-        title: "",
-        category: "",
-        description: "",
-        date: "",
-        city: "",
-        venue: "",
-      };
+  const { id } = useParams<{ id: string }>();
+
+  const {
+    createActivity,
+    editActivity,
+    submitting,
+    loadActivity,
+    clearActivity,
+  } = activityStore;
+
+  const [activity, setActivity] = useState<IActivity>({
+    id: "",
+    title: "",
+    category: "",
+    description: "",
+    date: "",
+    city: "",
+    venue: "",
+  });
+
+  useEffect(() => {
+    if (id) {
+      loadActivity(id).then((activity) => setActivity(activity));
     }
-  };
 
-  const [activity, setActivity] = useState<IActivity>(initializeForm);
+    // cleanup
+    return () => {
+      clearActivity();
+    };
+  }, [id, loadActivity, clearActivity]);
 
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -50,9 +57,11 @@ const ActivityForm: React.FC<IProps> = ({
         ...activity,
         id: uuid(),
       };
-      createActivity(newActivity);
+      createActivity(newActivity).then(() =>
+        navigate(`/activities/${newActivity.id}`)
+      );
     } else {
-      editActivity(activity);
+      editActivity(activity).then(() => navigate(`/activities/${activity.id}`));
     }
   };
 
@@ -108,7 +117,7 @@ const ActivityForm: React.FC<IProps> = ({
           floated="right"
           type="button"
           content="Cancel"
-          onClick={() => cancelFormOpen()}
+          onClick={() => navigate("/activities")}
         />
       </Form>
     </Segment>
