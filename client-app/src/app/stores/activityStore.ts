@@ -16,18 +16,36 @@ class ActivityStore {
   }
 
   get activitiesByDate() {
-    return (
+    return this.groupActivitiesByDate(
       Array.from(this.activityRegistry.values())
-        //.slice()
-        .sort((a, b) => Date.parse(a.date) - Date.parse(b.date))
-    ); // Ascending order
+    );
+  }
+
+  // Note! Dictionary keyed by Date with a List value of Activities
+  groupActivitiesByDate(activities: IActivity[]) {
+    const sortedActivities = activities
+      .slice()
+      .sort((a, b) => Date.parse(a.date) - Date.parse(b.date)); // Ascending order
+
+    // Note! Dictionary collection
+    let accumulatorInitialValue = {} as { [key: string]: IActivity[] };
+
+    return Object.entries(
+      sortedActivities.reduce((activities, activity) => {
+        const date = activity.date.split("T")[0];
+        activities[date] = activities[date]
+          ? [...activities[date], activity]
+          : [activity];
+        return activities;
+      }, accumulatorInitialValue)
+    );
   }
 
   loadActivities = async () => {
     try {
       this.loadingInitial = true;
       const activities = await agent.Activities.list();
-
+      console.log(this.groupActivitiesByDate(activities)); // Note! Log non-proxy objects
       runInAction(() => {
         activities.forEach((activity) => {
           activity.date = activity.date.split(".")[0];
