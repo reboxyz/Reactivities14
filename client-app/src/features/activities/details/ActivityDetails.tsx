@@ -21,8 +21,9 @@ const ActivityDetails: React.FC = () => {
     }
   }, [id, loadActivity]);
 
-  if (loadingInitial || !activity)
-    return <LoadingComponent content="Loading..." />;
+  if (loadingInitial) return <LoadingComponent content="Loading..." />;
+
+  if (!activity) return <h2>Activity Not Found</h2>;
 
   return (
     <Grid>

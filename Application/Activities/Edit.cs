@@ -1,3 +1,6 @@
+using System.Net;
+using Application.Errors;
+using FluentValidation;
 using MediatR;
 using Persistence;
 
@@ -16,6 +19,20 @@ public class Edit
         public string Venue { get; set; } = string.Empty;
     }
 
+    public class CommandValidator : AbstractValidator<Command>
+    {
+        public CommandValidator()
+        {
+            RuleFor(x => x.Id).NotEmpty();
+            RuleFor(x => x.Title).NotEmpty();
+            RuleFor(x => x.Description).NotEmpty();
+            RuleFor(x => x.Category).NotEmpty();
+            RuleFor(x => x.Date).NotEmpty();
+            RuleFor(x => x.City).NotEmpty();
+            RuleFor(x => x.Venue).NotEmpty();
+        }
+    }
+
     public class Handler : IRequestHandler<Command, Unit>
     {
         private readonly DataContext _dataContext;
@@ -29,7 +46,8 @@ public class Edit
         {
             var activity = await _dataContext.Activities.FindAsync(request.Id);
 
-            if (activity == null) throw new Exception("Could not find activity");
+             if (activity == null) throw new RestException(HttpStatusCode.NotFound,
+                new { activity = "Activity not found." });
 
             activity.Title = request.Title ?? activity.Title;
             activity.Description = request.Description ?? activity.Description;
@@ -42,7 +60,7 @@ public class Edit
 
             if (success) return Unit.Value;
 
-            throw new Exception("Problem saving changes");
+            throw new CustomApplicationException("Problem saving changes");
         }
     }
 

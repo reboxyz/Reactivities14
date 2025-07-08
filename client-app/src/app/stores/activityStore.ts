@@ -45,7 +45,7 @@ class ActivityStore {
     try {
       this.loadingInitial = true;
       const activities = await agent.Activities.list();
-      console.log(this.groupActivitiesByDate(activities)); // Note! Log non-proxy objects
+      //console.log(this.groupActivitiesByDate(activities)); // Note! Log non-proxy objects
       runInAction(() => {
         activities.forEach((activity) => {
           activity.date = activity.date.split(".")[0];

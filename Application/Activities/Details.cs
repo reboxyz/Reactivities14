@@ -1,3 +1,5 @@
+using System.Net;
+using Application.Errors;
 using Domain;
 using MediatR;
 using Persistence;
@@ -22,6 +24,10 @@ public class Details
         public async Task<Activity> Handle(Query request, CancellationToken cancellationToken)
         {
             var activity = await _dataContext.Activities.FindAsync(request.Id);
+
+            if (activity == null) throw new RestException(HttpStatusCode.NotFound,
+                new { activity = "Activity not found." });
+
             return activity;
         }
     }

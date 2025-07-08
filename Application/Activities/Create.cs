@@ -1,4 +1,6 @@
+using Application.Errors;
 using Domain;
+using FluentValidation;
 using MediatR;
 using Persistence;
 
@@ -15,6 +17,20 @@ public class Create
         public DateTime Date { get; set; }
         public string City { get; set; } = string.Empty;
         public string Venue { get; set; } = string.Empty;
+    }
+
+    public class CommandValidator : AbstractValidator<Command>
+    {
+        public CommandValidator()
+        {
+            RuleFor(x => x.Id).NotEmpty();
+            RuleFor(x => x.Title).NotEmpty();
+            RuleFor(x => x.Description).NotEmpty();
+            RuleFor(x => x.Category).NotEmpty();
+            RuleFor(x => x.Date).NotEmpty();
+            RuleFor(x => x.City).NotEmpty();
+            RuleFor(x => x.Venue).NotEmpty();
+        }
     }
 
     public class Handler : IRequestHandler<Command, Unit>
@@ -45,7 +61,7 @@ public class Create
 
             if (success) return Unit.Value;
 
-            throw new Exception("Problem saving changes");
+            throw new CustomApplicationException("Problem saving changes");
         }
     }
 }

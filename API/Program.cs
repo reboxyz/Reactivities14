@@ -1,5 +1,8 @@
 using System.Reflection;
+using API.Middleware;
 using Application.Activities;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
@@ -40,8 +43,12 @@ builder.Services.AddCors(opt =>
 });
 
 builder.Services.AddMediatR(typeof(List.Handler).Assembly);
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<Create>();
 
 var app = builder.Build();
+app.UseMiddleware<ErroHandlingMiddleware>();
 
 using (var scope = app.Services.CreateScope())
 {

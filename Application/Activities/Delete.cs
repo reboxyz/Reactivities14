@@ -1,3 +1,5 @@
+using System.Net;
+using Application.Errors;
 using MediatR;
 using Persistence;
 
@@ -23,7 +25,8 @@ public class Delete
         {
             var activity = await _dataContext.Activities.FindAsync(request.Id);
 
-            if (activity == null) throw new Exception("Could not find activity");
+            if (activity == null) throw new RestException(HttpStatusCode.NotFound,
+                new { activity = "Activity not found." });
 
             _dataContext.Activities.Remove(activity);
 
@@ -31,7 +34,7 @@ public class Delete
 
             if (success) return Unit.Value;
 
-            throw new Exception("Problem saving changes");
+            throw new CustomApplicationException("Problem saving changes");
         }
     }
 }
