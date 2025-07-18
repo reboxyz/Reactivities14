@@ -13,6 +13,7 @@ import {
   Icon,
 } from "semantic-ui-react";
 import { IActivity } from "../../../app/models/activity";
+import { format } from "date-fns";
 
 interface IProps {
   activity: IActivity;
@@ -34,7 +35,7 @@ const ActivityListItem: React.FC<IProps> = ({ activity }) => {
       </Segment>
       <Segment>
         <Icon name="clock" />
-        {activity.date}
+        {format(activity.date!, "dd MMM yyyy h:mm aa")}
         <Icon name="marker" />
         {activity.venue}, {activity.city}
       </Segment>

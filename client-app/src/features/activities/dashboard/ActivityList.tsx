@@ -1,25 +1,25 @@
-import { ItemGroup, Label } from "semantic-ui-react";
+import { Header } from "semantic-ui-react";
 import { observer } from "mobx-react-lite";
 import { useStore } from "../../../app/stores/store";
 import ActivityListItem from "./ActivityListItem";
+import { Fragment } from "react/jsx-runtime";
 
 const ActivityList: React.FC = () => {
   const { activityStore } = useStore();
-  const { activitiesByDate } = activityStore;
+  const { groupActivitiesByDate } = activityStore;
 
   return (
     <>
-      {activitiesByDate.map(([group, activities]) => (
-        <>
-          <Label size="large" color="blue" key={group}>
-            {group}
-          </Label>
-          <ItemGroup divided>
-            {activities.map((activity) => (
-              <ActivityListItem key={activity.id} activity={activity} />
-            ))}
-          </ItemGroup>
-        </>
+      {groupActivitiesByDate.map(([groupKey, activities]) => (
+        <Fragment key={groupKey}>
+          <Header sub color="teal">
+            {groupKey}
+          </Header>
+
+          {activities?.map((activity) => (
+            <ActivityListItem key={activity.id} activity={activity} />
+          ))}
+        </Fragment>
       ))}
     </>
   );

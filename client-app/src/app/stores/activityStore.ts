@@ -1,40 +1,41 @@
 import { makeAutoObservable, runInAction, configure } from "mobx";
 import { IActivity } from "../models/activity";
 import agent from "../api/agent";
+import { format } from "date-fns";
 
 configure({ enforceActions: "always" });
 
 class ActivityStore {
-  activityRegistry = new Map();
+  activityRegistry = new Map<string, IActivity>();
   loadingInitial = false;
   submitting = false;
-  activity: IActivity | null = null;
+  activity: IActivity | undefined = undefined;
   target = "";
 
   public constructor() {
     makeAutoObservable(this);
   }
 
+  // Computed Props
   get activitiesByDate() {
-    return this.groupActivitiesByDate(
-      Array.from(this.activityRegistry.values())
-    );
+    let activitiesToReturn = Array.from(this.activityRegistry.values()).sort(
+      (a, b) => a.date!.getTime() - b.date!.getTime()
+    ); // ascending date order
+
+    return activitiesToReturn;
   }
 
   // Note! Dictionary keyed by Date with a List value of Activities
-  groupActivitiesByDate(activities: IActivity[]) {
-    const sortedActivities = activities
-      .slice()
-      .sort((a, b) => Date.parse(a.date) - Date.parse(b.date)); // Ascending order
-
+  get groupActivitiesByDate() {
     // Note! Dictionary collection
     let accumulatorInitialValue = {} as { [key: string]: IActivity[] };
 
     return Object.entries(
-      sortedActivities.reduce((activities, activity) => {
-        const date = activity.date.split("T")[0];
-        activities[date] = activities[date]
-          ? [...activities[date], activity]
+      this.activitiesByDate.reduce((activities, activity) => {
+        //const dateKey = new Date(activity.date!).toISOString().split("T")[0];
+        const dateKey = format(activity.date!, "dd MMM yyyy");
+        activities[dateKey] = activities[dateKey]
+          ? [...activities[dateKey], activity]
           : [activity];
         return activities;
       }, accumulatorInitialValue)
@@ -45,11 +46,10 @@ class ActivityStore {
     try {
       this.loadingInitial = true;
       const activities = await agent.Activities.list();
-      //console.log(this.groupActivitiesByDate(activities)); // Note! Log non-proxy objects
+
       runInAction(() => {
         activities.forEach((activity) => {
-          activity.date = activity.date.split(".")[0];
-          this.activityRegistry.set(activity.id, activity);
+          this.setActivity(activity);
         });
       });
     } catch (error) {
@@ -61,11 +61,17 @@ class ActivityStore {
     }
   };
 
-  loadActivity = async (id: string): Promise<IActivity> => {
+  setActivity = (activity: IActivity) => {
+    activity.date = new Date(activity.date!);
+    this.activityRegistry.set(activity.id, activity);
+  };
+
+  loadActivity = async (id: string) => {
     let activity = this.getActivity(id);
 
     if (activity) {
       this.activity = activity;
+      return activity;
     } else {
       try {
         this.loadingInitial = true;
@@ -73,6 +79,7 @@ class ActivityStore {
         runInAction(() => {
           this.activity = activity;
         });
+        return activity;
       } catch (error) {
         console.log(error);
       } finally {
@@ -81,11 +88,10 @@ class ActivityStore {
         });
       }
     }
-    return activity;
   };
 
   clearActivity = () => {
-    this.activity = null;
+    this.activity = undefined;
   };
 
   getActivity = (id: string) => {
