@@ -1,9 +1,12 @@
 using System.Reflection;
+using API.Extensions;
 using API.Middleware;
 using Application.Activities;
+using Domain;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 using Serilog;
@@ -21,31 +24,8 @@ builder.Host.UseSerilog((context, loggerConfig) =>
     .WriteTo.Debug();
 });
 
-// Add services to the container.
-builder.Services.AddDbContext<DataContext>(opt =>
-{
-    opt.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
-});
-
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-builder.Services.AddSwaggerGen();
-
-builder.Services.AddCors(opt =>
-{
-    opt.AddPolicy("CorsPolicy", policy =>
-    {
-        policy.AllowAnyHeader()
-            .AllowAnyMethod()
-            .WithOrigins("http://localhost:3000");
-    });
-});
-
-builder.Services.AddMediatR(typeof(List.Handler).Assembly);
-builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddFluentValidationClientsideAdapters();
-builder.Services.AddValidatorsFromAssemblyContaining<Create>();
+builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddIdentityServices(builder.Configuration);
 
 var app = builder.Build();
 app.UseMiddleware<ErroHandlingMiddleware>();
@@ -55,6 +35,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
 
         // Check and apply pending migrations
         var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
@@ -63,7 +44,7 @@ using (var scope = app.Services.CreateScope())
             await dbContext.Database.MigrateAsync();
         }
 
-        await Seed.SeedData(dbContext);
+        await Seed.SeedData(dbContext, userManager);
     }
     catch (Exception ex)
     {
@@ -86,6 +67,7 @@ else
 
 app.UseCors("CorsPolicy");
 
+app.UseAuthentication(); // Note! This should come first before 'UseAuthorization'
 app.UseAuthorization();
 
 app.MapControllers();
