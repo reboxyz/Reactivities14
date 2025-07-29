@@ -1,5 +1,5 @@
 import { useField } from "formik";
-import React from "react";
+import React, { useState } from "react";
 import { Form, Label, Select } from "semantic-ui-react";
 
 interface IProps {
@@ -14,6 +14,7 @@ interface IProps {
 
 const MySelectInput: React.FC<IProps> = (props) => {
   const [field, meta, helpers] = useField(props);
+  const [hasFocus, setHasFocus] = useState(false);
   return (
     <Form.Field error={meta.touched && !!meta.error}>
       <label>{props.label}</label>
@@ -22,11 +23,15 @@ const MySelectInput: React.FC<IProps> = (props) => {
         options={props.options}
         value={field.value || null}
         onChange={(_e, d) => helpers.setValue(d.value)}
-        onBlur={() => helpers.setTouched(true)}
+        onBlur={() => {
+          helpers.setTouched(true);
+          setHasFocus(false);
+        }}
+        onFocus={() => setHasFocus(true)}
         placeholder={props.placeholder}
         name={props.name}
       />
-      {meta.touched && meta.error ? (
+      {meta.touched && !hasFocus && meta.error ? (
         <Label basic color="red" style={{ marginTop: "4px" }}>
           {meta.error}
         </Label>

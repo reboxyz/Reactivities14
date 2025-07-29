@@ -8,13 +8,33 @@ import ActivityDetails from "../../features/activities/details/ActivityDetails";
 import NotFound from "./NotFound";
 import RouteNavigateWorkaround from "./RouteNavigateWorkaround";
 import { ToastContainer } from "react-toastify";
+import LoginForm from "../../features/users/LoginForm";
+import { useStore } from "../stores/store";
+import { useEffect } from "react";
+import LoadingComponent from "./LoadingComponent";
+import ModalContainer from "../common/modals/ModalContainer";
 
 const App: React.FC = () => {
   const location = useLocation();
+  const { commonStore, userStore } = useStore();
+
+  useEffect(() => {
+    if (commonStore.token) {
+      userStore.getUser().finally(() => {
+        commonStore.setAppLoaded();
+      });
+    } else {
+      commonStore.setAppLoaded();
+    }
+  }, [userStore, commonStore]);
+
+  if (!commonStore.appLoaded)
+    return <LoadingComponent content="Loading app..." />;
 
   return (
     <>
       <ToastContainer position="bottom-right" hideProgressBar />
+      <ModalContainer />
       <RouteNavigateWorkaround />
       <Routes>
         <Route index path="/" element={<HomePage />} />
@@ -32,6 +52,7 @@ const App: React.FC = () => {
             path="/manage/:id"
             element={<ActivityForm key={location.key} />}
           />
+          <Route path="/login" element={<LoginForm />} />
           {/* Default Route Fallback */}
           <Route path="/*" element={<NotFound />} />
         </Route>
