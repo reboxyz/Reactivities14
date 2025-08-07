@@ -1,4 +1,5 @@
 using System.Net;
+using Application.Core;
 using Application.Errors;
 using FluentValidation;
 using MediatR;
@@ -8,7 +9,7 @@ namespace Application.Activities;
 
 public class Edit
 {
-    public class Command : IRequest<Unit>
+    public class Command : IRequest<Result<Unit>>
     {
         public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;
@@ -23,7 +24,7 @@ public class Edit
     {
         public CommandValidator()
         {
-            RuleFor(x => x.Id).NotEmpty();
+            //RuleFor(x => x.Id).NotEmpty();  // Note! Excluded
             RuleFor(x => x.Title).NotEmpty();
             RuleFor(x => x.Description).NotEmpty();
             RuleFor(x => x.Category).NotEmpty();
@@ -33,7 +34,7 @@ public class Edit
         }
     }
 
-    public class Handler : IRequestHandler<Command, Unit>
+    public class Handler : IRequestHandler<Command, Result<Unit>>
     {
         private readonly DataContext _dataContext;
 
@@ -42,7 +43,7 @@ public class Edit
             _dataContext = dataContext;
         }
 
-        public async Task<Unit> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Result<Unit>> Handle(Command request, CancellationToken cancellationToken)
         {
             var activity = await _dataContext.Activities.FindAsync(request.Id);
 
@@ -56,11 +57,11 @@ public class Edit
             activity.City = request.City ?? activity.City;
             activity.Venue = request.Venue ?? activity.Venue;
 
-            var success = await _dataContext.SaveChangesAsync(cancellationToken) > 0;
+            var result = await _dataContext.SaveChangesAsync(cancellationToken) > 0;
 
-            if (success) return Unit.Value;
+            if (!result) return Result<Unit>.Failure("Problem saving changes");
 
-            throw new CustomApplicationException("Problem saving changes");
+            return Result<Unit>.Success(Unit.Value);
         }
     }
 

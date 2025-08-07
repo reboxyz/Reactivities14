@@ -1,14 +1,17 @@
+using Application.Core;
 using Application.Errors;
+using Application.Interfaces;
 using Domain;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Persistence;
 
 namespace Application.Activities;
 
 public class Create
 {
-    public class Command : IRequest<Unit>
+    public class Command : IRequest<Result<Unit>>
     {
         public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;
@@ -33,17 +36,21 @@ public class Create
         }
     }
 
-    public class Handler : IRequestHandler<Command, Unit>
+    public class Handler : IRequestHandler<Command, Result<Unit>>
     {
         private readonly DataContext _dataContext;
+        private readonly IUserAccessor _userAccessor;
 
-        public Handler(DataContext dataContext)
+        public Handler(DataContext dataContext, IUserAccessor userAccessor)
         {
+            _userAccessor = userAccessor;
             _dataContext = dataContext;
         }
 
-        public async Task<Unit> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Result<Unit>> Handle(Command request, CancellationToken cancellationToken)
         {
+            var user = await _dataContext.Users.FirstOrDefaultAsync(x => x.UserName == _userAccessor.GetUsername());
+
             var activity = new Activity
             {
                 Id = request.Id,
@@ -55,13 +62,22 @@ public class Create
                 Venue = request.Venue
             };
 
+            var attendee = new ActivityAttendee
+            {
+                AppUser = user!,
+                Activity = activity,
+                IsHost = true,
+            };
+
+            activity.Attendees.Add(attendee);
+
             _dataContext.Activities.Add(activity);
 
-            var success = await _dataContext.SaveChangesAsync(cancellationToken) > 0;
+            var result = await _dataContext.SaveChangesAsync(cancellationToken) > 0;
 
-            if (success) return Unit.Value;
+            if (!result) return Result<Unit>.Failure("Failed to create activity");
 
-            throw new CustomApplicationException("Problem saving changes");
+            return Result<Unit>.Success(Unit.Value);
         }
     }
 }

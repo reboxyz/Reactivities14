@@ -1,50 +1,52 @@
 using Application.Activities;
-using Domain;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class ActivitiesController : ControllerBase
+public class ActivitiesController : BasiApiController
 {
-    private readonly IMediator _mediator;
-
-    public ActivitiesController(IMediator mediator)
+    public ActivitiesController()
     {
-        _mediator = mediator;
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<Activity>>> List(CancellationToken ct)
+    public async Task<IActionResult> List(CancellationToken ct)
     {
-        return await _mediator.Send(new List.Query(), ct);
+        var activities = await Mediator.Send(new List.Query(), ct);
+        return HandleResult(activities);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Activity>> Details(Guid id)
+    public async Task<IActionResult> Details(Guid id)
     {
-        return await _mediator.Send(new Details.Query { Id = id });
+        return HandleResult(await Mediator.Send(new Details.Query { Id = id }));
     }
 
     [HttpPost]
-    public async Task<ActionResult<Unit>> Create([FromBody] Create.Command command)
+    public async Task<IActionResult> Create([FromBody] Create.Command command)
     {
-        return await _mediator.Send(command);
+        return HandleResult(await Mediator.Send(command));
     }
 
+    [Authorize(Policy = "IsActivityHost")]
     [HttpPut("{id}")]
-    public async Task<ActionResult<Unit>> Edit(Guid id, [FromBody] Edit.Command command)
+    public async Task<IActionResult> Edit(Guid id, [FromBody] Edit.Command command)
     {
         command.Id = id;
-        return await _mediator.Send(command);
+        return HandleResult(await Mediator.Send(command));
     }
 
+    [Authorize(Policy = "IsActivityHost")]
     [HttpDelete("{id}")]
-    public async Task<ActionResult<Unit>> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id)
     {
-        return await _mediator.Send(new Delete.Command { Id = id });
+        return HandleResult(await Mediator.Send(new Delete.Command { Id = id }));
+    }
+
+    [HttpPost("{id}/attend")]
+    public async Task<IActionResult> Attend(Guid id)
+    {
+        return HandleResult(await Mediator.Send(new UpdateAttendance.Command { Id = id }));
     }
 }

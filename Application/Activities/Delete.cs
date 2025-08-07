@@ -1,4 +1,5 @@
 using System.Net;
+using Application.Core;
 using Application.Errors;
 using MediatR;
 using Persistence;
@@ -7,12 +8,12 @@ namespace Application.Activities;
 
 public class Delete
 {
-    public class Command : IRequest<Unit>
+    public class Command : IRequest<Result<Unit>>
     {
         public Guid Id { get; set; }
     }
 
-    public class Handler : IRequestHandler<Command, Unit>
+    public class Handler : IRequestHandler<Command, Result<Unit>>
     {
         private readonly DataContext _dataContext;
 
@@ -21,7 +22,7 @@ public class Delete
             _dataContext = dataContext;
         }
 
-        public async Task<Unit> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Result<Unit>> Handle(Command request, CancellationToken cancellationToken)
         {
             var activity = await _dataContext.Activities.FindAsync(request.Id);
 
@@ -30,11 +31,11 @@ public class Delete
 
             _dataContext.Activities.Remove(activity);
 
-            var success = await _dataContext.SaveChangesAsync() > 0;
+            var result = await _dataContext.SaveChangesAsync() > 0;
 
-            if (success) return Unit.Value;
+            if (!result) return Result<Unit>.Failure("Problem saving changes");
 
-            throw new CustomApplicationException("Problem saving changes");
+            return Result<Unit>.Success(Unit.Value);
         }
     }
 }
