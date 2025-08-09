@@ -4,16 +4,15 @@ import {
   Item,
   ItemContent,
   ItemHeader,
-  ItemMeta,
   ItemDescription,
-  ItemExtra,
   Button,
-  Label,
   Segment,
   Icon,
+  Label,
 } from "semantic-ui-react";
 import { IActivity } from "../../../app/models/activity";
 import { format } from "date-fns";
+import ActivityListItemAttendee from "./ActivityListItemAttendee";
 
 interface IProps {
   activity: IActivity;
@@ -23,12 +22,41 @@ const ActivityListItem: React.FC<IProps> = ({ activity }) => {
   return (
     <Segment.Group>
       <Segment>
+        {activity.isCancelled && (
+          <Label
+            attached="top"
+            color="red"
+            content="Cancelled"
+            style={{ textAlign: "center" }}
+          />
+        )}
         <Item.Group>
           <Item>
-            <Item.Image size="tiny" circular src="/assets/user.png" />
+            <Item.Image
+              size="tiny"
+              circular
+              src="/assets/user.png"
+              style={{ marginBottom: "5px" }}
+            />
             <ItemContent>
               <ItemHeader as="a">{activity.title}</ItemHeader>
-              <ItemDescription>Hosted by Bob</ItemDescription>
+              <ItemDescription>
+                Hosted by {activity.host?.displayName}
+              </ItemDescription>
+              {activity.isHost && (
+                <Item.Description>
+                  <Label basic color="orange">
+                    You are hosting this activity
+                  </Label>
+                </Item.Description>
+              )}
+              {activity.isGoing && !activity.isHost && (
+                <Item.Description>
+                  <Label basic color="green">
+                    You are going to this activity
+                  </Label>
+                </Item.Description>
+              )}
             </ItemContent>
           </Item>
         </Item.Group>
@@ -39,7 +67,9 @@ const ActivityListItem: React.FC<IProps> = ({ activity }) => {
         <Icon name="marker" />
         {activity.venue}, {activity.city}
       </Segment>
-      <Segment secondary>Attendees will go here</Segment>
+      <Segment secondary>
+        <ActivityListItemAttendee attendees={activity.attendees} />
+      </Segment>
       <Segment clearing>
         <span>{activity.description}</span>
         <Button

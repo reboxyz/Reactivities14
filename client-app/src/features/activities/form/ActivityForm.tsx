@@ -1,5 +1,5 @@
 import { Button, Grid, Header, Segment } from "semantic-ui-react";
-import { IActivity } from "../../../app/models/activity";
+import { ActivityFormValues } from "../../../app/models/activity";
 import { useEffect, useState } from "react";
 import { v4 as uuid } from "uuid";
 import { observer } from "mobx-react-lite";
@@ -19,23 +19,12 @@ const ActivityForm: React.FC = () => {
 
   const { id } = useParams<{ id: string }>();
 
-  const {
-    createActivity,
-    editActivity,
-    submitting,
-    loadActivity,
-    clearActivity,
-  } = activityStore;
+  const { createActivity, editActivity, loadActivity, clearActivity } =
+    activityStore;
 
-  const [activity, setActivity] = useState<IActivity>({
-    id: "",
-    title: "",
-    category: "",
-    description: "",
-    date: null,
-    city: "",
-    venue: "",
-  });
+  const [activity, setActivity] = useState<ActivityFormValues>(
+    new ActivityFormValues()
+  );
 
   const validationScheme = Yup.object({
     title: Yup.string().required("The activity title is required."),
@@ -48,7 +37,9 @@ const ActivityForm: React.FC = () => {
 
   useEffect(() => {
     if (id) {
-      loadActivity(id).then((activity) => setActivity(activity!));
+      loadActivity(id).then((activity) =>
+        setActivity(new ActivityFormValues(activity))
+      );
     }
 
     // cleanup
@@ -57,8 +48,8 @@ const ActivityForm: React.FC = () => {
     };
   }, [id, loadActivity, clearActivity]);
 
-  const handleFormSubmit = (activity: IActivity) => {
-    if (activity.id.length === 0) {
+  const handleFormSubmit = (activity: ActivityFormValues) => {
+    if (!activity.id) {
       let newActivity = {
         ...activity,
         id: uuid(),
@@ -110,7 +101,7 @@ const ActivityForm: React.FC = () => {
                   positive
                   type="submit"
                   content="Submit"
-                  loading={submitting}
+                  loading={isSubmitting}
                   disabled={isSubmitting || !dirty || !isValid}
                 />
                 <Button

@@ -1,13 +1,16 @@
 import { makeAutoObservable, runInAction, configure } from "mobx";
-import { IActivity } from "../models/activity";
+import { Activity, ActivityFormValues, IActivity } from "../models/activity";
 import agent from "../api/agent";
 import { format } from "date-fns";
+import { store } from "./store";
+import { Profile } from "../models/profile";
 
 configure({ enforceActions: "always" });
 
 class ActivityStore {
   activityRegistry = new Map<string, IActivity>();
   loadingInitial = false;
+  loading = false;
   submitting = false;
   activity: IActivity | undefined = undefined;
   target = "";
@@ -62,6 +65,17 @@ class ActivityStore {
   };
 
   setActivity = (activity: IActivity) => {
+    const user = store.userStore.user;
+    if (user) {
+      activity.isGoing = activity.attendees.some(
+        (a) => a.username === user.username
+      );
+    }
+    activity.isHost = activity.hostUsername === user?.username;
+    activity.host = activity.attendees?.find(
+      (x) => x.username === activity.hostUsername
+    );
+
     activity.date = new Date(activity.date!);
     this.activityRegistry.set(activity.id, activity);
   };
@@ -98,37 +112,39 @@ class ActivityStore {
     return this.activityRegistry.get(id);
   };
 
-  createActivity = async (activity: IActivity) => {
-    this.submitting = true;
+  createActivity = async (activity: ActivityFormValues) => {
+    const user = store.userStore.user;
+    const attendee = new Profile(user!);
     try {
       await agent.Activities.create(activity);
+      const newActivity = new Activity(activity);
+      newActivity.hostUsername = user?.username;
+      newActivity.attendees = [attendee];
+      this.setActivity(newActivity);
+
       runInAction(() => {
-        this.activityRegistry.set(activity.id, activity);
-        this.activity = activity;
+        this.activity = newActivity;
       });
     } catch (error) {
       console.log(error);
-    } finally {
-      runInAction(() => {
-        this.submitting = false;
-      });
     }
   };
 
-  editActivity = async (activity: IActivity) => {
-    this.submitting = true;
+  editActivity = async (activity: ActivityFormValues) => {
     try {
       await agent.Activities.update(activity);
       runInAction(() => {
-        this.activityRegistry.set(activity.id, activity);
-        this.activity = activity;
+        if (activity.id) {
+          let updatedActivity = {
+            ...this.getActivity(activity.id),
+            ...activity,
+          };
+          this.activityRegistry.set(activity.id, updatedActivity as Activity);
+          this.activity = updatedActivity as Activity;
+        }
       });
     } catch (error) {
       console.log(error);
-    } finally {
-      runInAction(() => {
-        this.submitting = false;
-      });
     }
   };
 
@@ -146,6 +162,51 @@ class ActivityStore {
     } finally {
       runInAction(() => {
         this.submitting = false;
+      });
+    }
+  };
+
+  updateAttendance = async () => {
+    const user = store.userStore.user;
+    this.loading = true;
+    try {
+      await agent.Activities.attend(this.activity!.id);
+      runInAction(() => {
+        // Note! Toggle logic
+        if (this.activity?.isGoing) {
+          this.activity.attendees = this.activity.attendees?.filter(
+            (a) => a.username !== user?.username
+          );
+          this.activity.isGoing = false;
+        } else {
+          const attendee = new Profile(user!);
+          this.activity?.attendees?.push(attendee);
+          this.activity!.isGoing = true;
+        }
+        this.activityRegistry.set(this.activity!.id, this.activity!);
+      });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      runInAction(() => {
+        this.loading = false;
+      });
+    }
+  };
+
+  cancelActivityToggle = async () => {
+    this.loading = true;
+    try {
+      await agent.Activities.attend(this.activity!.id);
+      runInAction(() => {
+        this.activity!.isCancelled = !this.activity!.isCancelled;
+        this.activityRegistry.set(this.activity!.id, this.activity!);
+      });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      runInAction(() => {
+        this.loading = false;
       });
     }
   };

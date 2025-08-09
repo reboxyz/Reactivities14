@@ -1,5 +1,5 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
-import { IActivity } from "../models/activity";
+import { ActivityFormValues, IActivity } from "../models/activity";
 import { store } from "../stores/store";
 import { toast } from "react-toastify";
 import { IUser, IUserFormValues } from "../models/user";
@@ -8,7 +8,7 @@ axios.defaults.baseURL = import.meta.env.VITE_REACT_APP_API_URL;
 
 const DELAY: number = 1000;
 
-const responseBody = (response: AxiosResponse) => response.data;
+const responseBody = <T>(response: AxiosResponse<T>) => response.data;
 
 axios.interceptors.request.use((config) => {
   const token = store.commonStore.token;
@@ -85,19 +85,22 @@ const requests = {
 };
 
 const Activities = {
-  list: () => requests.get<IActivity[]>("/activities"),
-  details: (id: string) => requests.get<IActivity>(`/activities/${id}`),
-  create: (activity: IActivity) => requests.post<void>("/activities", activity),
-  update: (activity: IActivity) =>
+  list: (): Promise<IActivity[]> => requests.get<IActivity[]>("/activities"),
+  details: (id: string): Promise<IActivity> =>
+    requests.get<IActivity>(`/activities/${id}`),
+  create: (activity: ActivityFormValues): Promise<void> =>
+    requests.post<void>("/activities", activity),
+  update: (activity: ActivityFormValues): Promise<void> =>
     requests.put<void>(`/activities/${activity.id}`, activity),
   delete: (id: string) => requests.del<void>(`/activities/${id}`),
+  attend: (id: string) => requests.post<void>(`/activities/${id}/attend`, {}),
 };
 
 const Account = {
-  current: () => requests.get<IUser>("/account"),
-  login: (user: IUserFormValues) =>
+  current: (): Promise<IUser> => requests.get<IUser>("/account"),
+  login: (user: IUserFormValues): Promise<IUser> =>
     requests.post<IUser>("/account/login", user),
-  register: (user: IUserFormValues) =>
+  register: (user: IUserFormValues): Promise<IUser> =>
     requests.post<IUser>("/account/register", user),
 };
 
