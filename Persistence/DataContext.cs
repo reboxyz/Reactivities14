@@ -17,6 +17,7 @@ public class DataContext : IdentityDbContext<AppUser> //DbContext
     public DbSet<Value> Values { get; set; }
     public DbSet<Activity> Activities { get; set; }
     public DbSet<ActivityAttendee> ActivityAttendees { get; set; }
+    public DbSet<Photo> Photos { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -43,7 +44,7 @@ public class DataContext : IdentityDbContext<AppUser> //DbContext
             .HasOne(u => u.Activity)
             .WithMany(a => a.Attendees)
             .HasForeignKey(aa => aa.ActivityId);
- 
+
     }
 
 
