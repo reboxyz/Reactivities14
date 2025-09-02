@@ -3,6 +3,7 @@ import { ActivityFormValues, IActivity } from "../models/activity";
 import { store } from "../stores/store";
 import { toast } from "react-toastify";
 import { IUser, IUserFormValues } from "../models/user";
+import { IPhoto, IProfile } from "../models/profile";
 
 axios.defaults.baseURL = import.meta.env.VITE_REACT_APP_API_URL;
 
@@ -104,7 +105,23 @@ const Account = {
     requests.post<IUser>("/account/register", user),
 };
 
+const Profiles = {
+  get: (username: string): Promise<IProfile> =>
+    requests.get<IProfile>(`/profiles/${username}`),
+  uploadPhoto: (file: Blob) => {
+    let formData = new FormData();
+    formData.append("File", file);
+
+    return axios.post<IPhoto>("photos", formData, {
+      headers: { "Content-type": "multipart/form-data" },
+    });
+  },
+  setMainPhoto: (id: string) => requests.post(`/photos/${id}/setMain`, {}),
+  deletePhoto: (id: string) => requests.del(`/photos/${id}`),
+};
+
 export default {
   Activities,
   Account,
+  Profiles,
 };

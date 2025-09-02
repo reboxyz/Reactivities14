@@ -35,13 +35,16 @@ const ActivityListItem: React.FC<IProps> = ({ activity }) => {
             <Item.Image
               size="tiny"
               circular
-              src="/assets/user.png"
+              src={activity.host?.image || "/assets/user.png"}
               style={{ marginBottom: "5px" }}
             />
             <ItemContent>
               <ItemHeader as="a">{activity.title}</ItemHeader>
               <ItemDescription>
-                Hosted by {activity.host?.displayName}
+                Hosted by{" "}
+                <Link to={`/profiles/${activity.host?.username}`}>
+                  {activity.host?.displayName}
+                </Link>
               </ItemDescription>
               {activity.isHost && (
                 <Item.Description>

@@ -61,4 +61,10 @@ export default class UserStore {
       throw error; // Note! Let the form catch the error for display
     }
   };
+
+  setImage = (image: string) => {
+    if (this.user) {
+      this.user.image = image;
+    }
+  };
 }

@@ -13,6 +13,7 @@ import { useStore } from "../stores/store";
 import { useEffect } from "react";
 import LoadingComponent from "./LoadingComponent";
 import ModalContainer from "../common/modals/ModalContainer";
+import ProfilePage from "../../features/profiles/ProfilePage";
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -52,6 +53,7 @@ const App: React.FC = () => {
             path="/manage/:id"
             element={<ActivityForm key={location.key} />}
           />
+          <Route path="/profiles/:username" element={<ProfilePage />} />
           <Route path="/login" element={<LoginForm />} />
           {/* Default Route Fallback */}
           <Route path="/*" element={<NotFound />} />
