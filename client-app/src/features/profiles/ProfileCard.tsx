@@ -14,7 +14,11 @@ const ProfileCard: React.FC<IProps> = ({ profile }) => {
       <Image src={profile.image || "/assets/user.png"} />
       <Card.Content>
         <Card.Header>{profile.displayName}</Card.Header>
-        <Card.Description>Bio goes here</Card.Description>
+        <Card.Description>
+          {profile.bio && profile.bio.length > 30
+            ? profile.bio?.substring(0, 30) + "..."
+            : profile.bio}
+        </Card.Description>
       </Card.Content>
       <Card.Content extra>
         <Icon name="user" />

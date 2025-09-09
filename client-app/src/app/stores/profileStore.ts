@@ -88,7 +88,7 @@ export default class ProfileStore {
       this.deleting = true;
       await agent.Profiles.deletePhoto(photo.id);
       runInAction(() => {
-        if (this.profile && this.profile.photos) {
+        if (this.profile?.photos) {
           this.profile.photos = this.profile.photos.filter(
             (p) => p.id !== photo.id
           );
@@ -99,6 +99,26 @@ export default class ProfileStore {
     } finally {
       runInAction(() => {
         this.deleting = false;
+      });
+    }
+  };
+
+  editProfile = async (profile: Partial<IProfile>) => {
+    try {
+      this.uploading = true;
+      await agent.Profiles.update(profile);
+      runInAction(() => {
+        if (this.profile && store.userStore.user) {
+          this.profile.displayName = profile.displayName!;
+          this.profile.bio = profile.bio;
+          store.userStore.setDisplayName(profile.displayName!);
+        }
+      });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      runInAction(() => {
+        this.uploading = true;
       });
     }
   };
