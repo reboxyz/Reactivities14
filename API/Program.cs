@@ -1,6 +1,7 @@
 using System.Reflection;
 using API.Extensions;
 using API.Middleware;
+using API.SignalR;
 using Application.Activities;
 using Domain;
 using FluentValidation;
@@ -66,10 +67,16 @@ else
 }
 
 app.UseCors("CorsPolicy");
+app.UseRouting();
 
 app.UseAuthentication(); // Note! This should come first before 'UseAuthorization'
 app.UseAuthorization();
 
-app.MapControllers();
+//app.MapControllers();
+app.UseEndpoints(endPoints =>
+{
+    _ = endPoints.MapControllers();
+    _ = endPoints.MapHub<ChatHub>("/chat");
+});
 
 await app.RunAsync();

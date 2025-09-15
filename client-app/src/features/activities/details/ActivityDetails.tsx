@@ -11,7 +11,8 @@ import ActivityDetailedSidebar from "./ActivityDetailedSidebar";
 
 const ActivityDetails: React.FC = () => {
   const { activityStore } = useStore();
-  const { activity, loadActivity, loadingInitial } = activityStore;
+  const { activity, loadActivity, loadingInitial, clearSelectedActivity } =
+    activityStore;
 
   const { id } = useParams<{ id: string }>();
 
@@ -19,7 +20,10 @@ const ActivityDetails: React.FC = () => {
     if (id) {
       loadActivity(id);
     }
-  }, [id, loadActivity]);
+    return () => {
+      clearSelectedActivity();
+    };
+  }, [id, loadActivity, clearSelectedActivity]);
 
   if (loadingInitial) return <LoadingComponent content="Loading..." />;
 
@@ -30,7 +34,7 @@ const ActivityDetails: React.FC = () => {
       <GridColumn width={10}>
         <ActivityDetailedHeader activity={activity} />
         <ActivityDetailedInfo activity={activity} />
-        <ActivityDetailedChat />
+        <ActivityDetailedChat activityId={activity.id} />
       </GridColumn>
       <GridColumn width={6}>
         <ActivityDetailedSidebar activity={activity} />

@@ -13,4 +13,6 @@ public class Activity
     public bool IsCancelled { get; set; }
     // Note! Many-to-many relationship between AppUser and Activity using ActivityAttendee as join table
     public ICollection<ActivityAttendee> Attendees { get; set; } = new List<ActivityAttendee>();
+    // Note! One-to-many relationship between Activity and Comment
+    public ICollection<Comment> Comments { get; set; } = new List<Comment>();
 }

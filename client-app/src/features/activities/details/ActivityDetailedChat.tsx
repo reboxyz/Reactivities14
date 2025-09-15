@@ -1,8 +1,33 @@
 import { observer } from "mobx-react-lite";
 import { Fragment } from "react/jsx-runtime";
-import { Segment, Header, Button, Comment, Form } from "semantic-ui-react";
+import { Segment, Header, Comment, Loader } from "semantic-ui-react";
+import { useStore } from "../../../app/stores/store";
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
+import { Formik, Form, Field, FieldProps } from "formik";
+import * as Yup from "yup";
 
-const ActivityDetailedChat = () => {
+interface IProps {
+  activityId: string;
+}
+
+const ActivityDetailedChat: React.FC<IProps> = ({ activityId }) => {
+  const { commentStore } = useStore();
+  const { createHubConnection, clearComments, comments, addComment } =
+    commentStore;
+
+  useEffect(() => {
+    if (activityId) {
+      createHubConnection(activityId);
+    }
+
+    // Cleanup
+    return () => {
+      clearComments();
+    };
+  }, [activityId, createHubConnection, clearComments]);
+
   return (
     <Fragment>
       <Segment
@@ -14,45 +39,59 @@ const ActivityDetailedChat = () => {
       >
         <Header>Chat about this event</Header>
       </Segment>
-      <Segment attached>
+      <Segment attached clearing>
+        <Formik
+          onSubmit={(values, { resetForm }) =>
+            addComment(values).then(() => resetForm())
+          }
+          initialValues={{ body: "" }}
+          validationSchema={Yup.object({
+            body: Yup.string().required(),
+          })}
+        >
+          {({ isSubmitting, isValid, handleSubmit }) => (
+            <Form className="ui form">
+              <Field name="body">
+                {(props: FieldProps) => (
+                  <div style={{ position: "relative" }}>
+                    <Loader active={isSubmitting} />
+                    <textarea
+                      placeholder="Enter your comment (Enter to submit, SHIFT + enter for new line)"
+                      rows={2}
+                      {...props.field}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && e.shiftKey) {
+                          return;
+                        }
+                        if (e.key === "Enter" && !e.shiftKey && isValid) {
+                          e.preventDefault();
+                          handleSubmit();
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </Field>
+            </Form>
+          )}
+        </Formik>
         <Comment.Group>
-          <Comment>
-            <Comment.Avatar src="/assets/user.png" />
-            <Comment.Content>
-              <Comment.Author as="a">Matt</Comment.Author>
-              <Comment.Metadata>
-                <div>Today at 5:42PM</div>
-              </Comment.Metadata>
-              <Comment.Text>How artistic!</Comment.Text>
-              <Comment.Actions>
-                <Comment.Action>Reply</Comment.Action>
-              </Comment.Actions>
-            </Comment.Content>
-          </Comment>
-
-          <Comment>
-            <Comment.Avatar src="/assets/user.png" />
-            <Comment.Content>
-              <Comment.Author as="a">Joe Henderson</Comment.Author>
-              <Comment.Metadata>
-                <div>5 days ago</div>
-              </Comment.Metadata>
-              <Comment.Text>Dude, this is awesome. Thanks so much</Comment.Text>
-              <Comment.Actions>
-                <Comment.Action>Reply</Comment.Action>
-              </Comment.Actions>
-            </Comment.Content>
-          </Comment>
-
-          <Form reply>
-            <Form.TextArea />
-            <Button
-              content="Add Reply"
-              labelPosition="left"
-              icon="edit"
-              primary
-            />
-          </Form>
+          {comments.map((comment) => (
+            <Comment key={comment.id}>
+              <Comment.Avatar src={comment.image || "/assets/user.png"} />
+              <Comment.Content>
+                <Comment.Author as={Link} to={`/profiles/${comment.username}`}>
+                  {comment.displayName}
+                </Comment.Author>
+                <Comment.Metadata>
+                  <div>{formatDistanceToNow(comment.createdAt)}</div>
+                </Comment.Metadata>
+                <Comment.Text style={{ whiteSpace: "pre-wrap" }}>
+                  {comment.body}
+                </Comment.Text>
+              </Comment.Content>
+            </Comment>
+          ))}
         </Comment.Group>
       </Segment>
     </Fragment>
