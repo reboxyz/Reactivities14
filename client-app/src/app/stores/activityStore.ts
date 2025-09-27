@@ -214,6 +214,20 @@ class ActivityStore {
   clearSelectedActivity = () => {
     this.activity = undefined;
   };
+
+  // Note! username is the User that we are to follow or unfollow. This is a toggle logic
+  updateAttendeeFollowing = (username: string) => {
+    this.activityRegistry.forEach((activity) => {
+      activity.attendees.forEach((attendee) => {
+        if (attendee.username === username) {
+          attendee.following
+            ? attendee.followersCount--
+            : attendee.followingCount++;
+          attendee.following = !attendee.following;
+        }
+      });
+    });
+  };
 }
 
 export default ActivityStore;
