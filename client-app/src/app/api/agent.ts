@@ -3,7 +3,8 @@ import { ActivityFormValues, IActivity } from "../models/activity";
 import { store } from "../stores/store";
 import { toast } from "react-toastify";
 import { IUser, IUserFormValues } from "../models/user";
-import { IPhoto, IProfile } from "../models/profile";
+import { IPhoto, IProfile, IUserActivity } from "../models/profile";
+import { PaginatedResult } from "../models/pagination";
 
 axios.defaults.baseURL = import.meta.env.VITE_REACT_APP_API_URL;
 
@@ -17,56 +18,72 @@ axios.interceptors.request.use((config) => {
   return config;
 });
 
-axios.interceptors.response.use(undefined, (error: AxiosError) => {
-  console.log(error);
+axios.interceptors.response.use(
+  async (response) => {
+    sleep(DELAY);
+    const pagination = response.headers["pagination"];
 
-  // Note! Network Error checking should be performed first before anything
-  if (error.message === "Network Error" && !error.response) {
-    toast.error("Network error - make sure API is running!");
-  }
+    if (pagination) {
+      response.data = new PaginatedResult(
+        response.data,
+        JSON.parse(pagination)
+      );
+      return response as AxiosResponse<PaginatedResult<any>>;
+    }
+    return response;
+  },
+  (error: AxiosError) => {
+    console.log(error);
 
-  //const { status, config, data } = error.response;
-  const {
-    data,
-    status,
-    config,
-    headers,
-  }: { data: any; status: number; config: any; headers: any } = error.response!;
+    // Note! Network Error checking should be performed first before anything
+    if (error.message === "Network Error" && !error.response) {
+      toast.error("Network error - make sure API is running!");
+    }
 
-  switch (status) {
-    case 400:
-      if (typeof data === "string") {
-        toast.error(data); // String data
-      }
+    //const { status, config, data } = error.response;
+    const {
+      data,
+      status,
+      config,
+      headers,
+    }: { data: any; status: number; config: any; headers: any } =
+      error.response!;
 
-      if (config.method === "get" && data.errors.hasOwnProperty("id")) {
-        store.navigateStore.setNavigateToRoute("/notfound");
-      }
-
-      if (data.errors) {
-        const modalStateErrors = [];
-        for (const key in data.errors) {
-          if (data.errors[key]) {
-            modalStateErrors.push(data.errors[key]);
-          }
+    switch (status) {
+      case 400:
+        if (typeof data === "string") {
+          toast.error(data); // String data
         }
-        //console.log("modalStateErrors before flattened:", modalStateErrors);
-        throw modalStateErrors.flat();
-      }
 
-      break;
+        if (config.method === "get" && data.errors.hasOwnProperty("id")) {
+          store.navigateStore.setNavigateToRoute("/notfound");
+        }
 
-    case 404:
-      store.navigateStore.setNavigateToRoute("/notfound");
-      break;
+        if (data.errors) {
+          const modalStateErrors = [];
+          for (const key in data.errors) {
+            if (data.errors[key]) {
+              modalStateErrors.push(data.errors[key]);
+            }
+          }
+          //console.log("modalStateErrors before flattened:", modalStateErrors);
+          throw modalStateErrors.flat();
+        }
 
-    case 500:
-      toast.error("Server error - check the terminal for more info!");
-      break;
+        break;
+
+      case 404:
+        store.navigateStore.setNavigateToRoute("/notfound");
+        break;
+
+      case 500:
+        toast.error("Server error - check the terminal for more info!");
+        break;
+    }
+
+    return Promise.reject(error);
   }
-
-  return Promise.reject(error);
-});
+);
 
 // Note! Currying pattern
 const sleep = (ms: number) => (response: AxiosResponse) =>
@@ -86,7 +103,10 @@ const requests = {
 };
 
 const Activities = {
-  list: (): Promise<IActivity[]> => requests.get<IActivity[]>("/activities"),
+  list: (params: URLSearchParams): Promise<PaginatedResult<IActivity[]>> =>
+    axios
+      .get<PaginatedResult<IActivity[]>>("/activities", { params })
+      .then(responseBody),
   details: (id: string): Promise<IActivity> =>
     requests.get<IActivity>(`/activities/${id}`),
   create: (activity: ActivityFormValues): Promise<void> =>
@@ -124,6 +144,13 @@ const Profiles = {
     requests.post(`/follow/${username}`, {}),
   listFollowings: (username: string, predicate: string): Promise<IProfile[]> =>
     requests.get<IProfile[]>(`/follow/${username}?predicate=${predicate}`),
+  listActivities: (
+    username: string,
+    predicate: string
+  ): Promise<IUserActivity[]> =>
+    requests.get<IUserActivity[]>(
+      `profiles/${username}/activities?predicate=${predicate}`
+    ),
 };
 
 export default {

@@ -1,28 +1,68 @@
-import React, { useEffect } from "react";
-import { Grid } from "semantic-ui-react";
+import React, { useEffect, useState } from "react";
+import { Grid, Loader } from "semantic-ui-react";
 import ActivityList from "./ActivityList";
 import { observer } from "mobx-react-lite";
 import { useStore } from "../../../app/stores/store";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
+import { PagingParams } from "../../../app/models/pagination";
+import InfiniteScroll from "react-infinite-scroller";
+import ActivityFilters from "./ActivityFilters";
+import ActivityListItemPlaceholder from "./ActivityListItemPlaceHolder";
 
 const ActivityDashboard: React.FC = () => {
   const { activityStore } = useStore();
-  const { loadingInitial, loadActivities } = activityStore;
+  const { loadingInitial, loadActivities, setPagingParams, pagination } =
+    activityStore;
+
+  const [loadingNext, setLoadingNext] = useState(false);
+
+  const handleGetNext = () => {
+    setLoadingNext(true);
+    setPagingParams(
+      new PagingParams(pagination!.currentPage + 1, pagination!.itemsPerPage)
+    );
+    loadActivities().then(() => {
+      setLoadingNext(false);
+    });
+  };
 
   useEffect(() => {
     loadActivities();
   }, [loadActivities]);
 
-  if (loadingInitial)
+  /*
+  if (loadingInitial && !loadingNext)
     return <LoadingComponent content="Loading activities..." />;
+  */
 
   return (
     <Grid>
       <Grid.Column width={10}>
-        <ActivityList />
+        {loadingInitial && !loadingNext ? (
+          <>
+            <ActivityListItemPlaceholder />
+            <ActivityListItemPlaceholder />
+          </>
+        ) : (
+          <InfiniteScroll
+            pageStart={0}
+            loadMore={handleGetNext}
+            hasMore={
+              !loadingNext &&
+              !!pagination &&
+              pagination.currentPage < pagination.totalPages
+            }
+            initialLoad={false}
+          >
+            <ActivityList />
+          </InfiniteScroll>
+        )}
       </Grid.Column>
       <Grid.Column width={6}>
-        <h2>Activity Filters</h2>
+        <ActivityFilters />
+      </Grid.Column>
+      <Grid.Column width={10}>
+        <Loader active={loadingNext} />
       </Grid.Column>
     </Grid>
   );

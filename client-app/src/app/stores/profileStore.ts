@@ -1,5 +1,5 @@
 import { makeAutoObservable, reaction, runInAction } from "mobx";
-import { IPhoto, IProfile } from "../models/profile";
+import { IPhoto, IProfile, IUserActivity } from "../models/profile";
 import agent from "../api/agent";
 import { store } from "./store";
 
@@ -11,6 +11,8 @@ export default class ProfileStore {
   deleting = false;
   loadingFollowings = false;
   followings: IProfile[] = [];
+  userActivities: IUserActivity[] = [];
+  loadingActivities = false;
   activeTab = 0; // 0: About, 1: Photos, 2: Events, 3: Followers, 4: Following
 
   static readonly FOLLOWERS_TAB: number = 3;
@@ -216,6 +218,25 @@ export default class ProfileStore {
     } finally {
       runInAction(() => {
         this.loadingFollowings = false;
+      });
+    }
+  };
+
+  loadUserActivities = async (username: string, predicate?: string) => {
+    try {
+      this.loadingActivities = true;
+      const activities = await agent.Profiles.listActivities(
+        username,
+        predicate!
+      );
+      runInAction(() => {
+        this.userActivities = activities;
+      });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      runInAction(() => {
+        this.loadingActivities = false;
       });
     }
   };
