@@ -20,7 +20,10 @@ axios.interceptors.request.use((config) => {
 
 axios.interceptors.response.use(
   async (response) => {
-    sleep(DELAY);
+    if (import.meta.env.DEV) {
+      sleep(DELAY);
+    }
+
     const pagination = response.headers["pagination"];
 
     if (pagination) {
@@ -45,9 +48,8 @@ axios.interceptors.response.use(
       data,
       status,
       config,
-      headers,
-    }: { data: any; status: number; config: any; headers: any } =
-      error.response!;
+    }: //headers,
+    { data: any; status: number; config: any; headers: any } = error.response!;
 
     switch (status) {
       case 400:

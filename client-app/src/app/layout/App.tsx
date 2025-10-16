@@ -14,6 +14,7 @@ import { useEffect } from "react";
 import LoadingComponent from "./LoadingComponent";
 import ModalContainer from "../common/modals/ModalContainer";
 import ProfilePage from "../../features/profiles/ProfilePage";
+import PrivateRoute from "./PrivateRoute";
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -40,24 +41,27 @@ const App: React.FC = () => {
       <Routes>
         <Route index path="/" element={<HomePage />} />
         {/*  PrivateRoute Start */}
-        {/* AppLayout Start */}
-        <Route element={<AppLayout />}>
-          <Route path="/activities" element={<ActivityDashboard />} />
-          <Route path="/activities/:id" element={<ActivityDetails />} />
-          <Route
-            path="/createActivity"
-            element={<ActivityForm key={location.key} />}
-            key={location.key}
-          />
-          <Route
-            path="/manage/:id"
-            element={<ActivityForm key={location.key} />}
-          />
-          <Route path="/profiles/:username" element={<ProfilePage />} />
-          <Route path="/login" element={<LoginForm />} />
-          {/* Default Route Fallback */}
-          <Route path="/*" element={<NotFound />} />
+        <Route path="" element={<PrivateRoute />}>
+          {/* AppLayout Start */}
+          <Route element={<AppLayout />}>
+            <Route path="/activities" element={<ActivityDashboard />} />
+            <Route path="/activities/:id" element={<ActivityDetails />} />
+            <Route
+              path="/createActivity"
+              element={<ActivityForm key={location.key} />}
+              key={location.key}
+            />
+            <Route
+              path="/manage/:id"
+              element={<ActivityForm key={location.key} />}
+            />
+            <Route path="/profiles/:username" element={<ProfilePage />} />
+            <Route path="/login" element={<LoginForm />} />
+          </Route>
         </Route>
+        {/* PrivateRoute End */}
+        {/* Default Route Fallback */}
+        <Route path="/*" element={<NotFound />} />
       </Routes>
     </>
   );

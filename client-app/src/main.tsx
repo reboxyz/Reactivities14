@@ -8,12 +8,15 @@ import "./app/layout/styles.css";
 import "react-datepicker/dist/react-datepicker.css";
 import "react-calendar/dist/Calendar.css";
 import ScrollToTop from "./app/layout/ScrollToTop.tsx";
+import { StoreContext, store } from "./app/stores/store.ts";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <BrowserRouter>
-      <ScrollToTop />
-      <App />
-    </BrowserRouter>
+    <StoreContext.Provider value={store}>
+      <BrowserRouter>
+        <ScrollToTop />
+        <App />
+      </BrowserRouter>
+    </StoreContext.Provider>
   </StrictMode>
 );

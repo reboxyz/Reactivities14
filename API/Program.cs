@@ -30,6 +30,21 @@ builder.Services.AddIdentityServices(builder.Configuration);
 
 var app = builder.Build();
 app.UseMiddleware<ErroHandlingMiddleware>();
+// Security Posture Strengthening
+app.UseXContentTypeOptions();
+app.UseReferrerPolicy(opt => opt.NoReferrer());
+app.UseXXssProtection(opt => opt.EnabledWithBlockMode());
+app.UseXfo(opt => opt.Deny());
+app.UseCspReportOnly(opt => opt
+    .BlockAllMixedContent()
+    .StyleSources(s => s.Self().CustomSources("https://fonts.googleapis.com", "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=", "sha256-Xo8/tnRnpUxMw05nUf764oT49W2GEbQN9LaX8Wqxuwg="))
+    .FontSources(s => s.Self().CustomSources("https://fonts.gstatic.com", "data:"))
+    .FormActions(s => s.Self())
+    .FrameAncestors(s => s.Self())
+    .ImageSources(s => s.Self().CustomSources("https://res.cloudinary.com"))
+    .ScriptSources(s => s.Self())
+);
+
 
 using (var scope = app.Services.CreateScope())
 {
@@ -64,10 +79,14 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseHttpsRedirection();
+    app.UseHsts();
 }
 
 app.UseCors("CorsPolicy");
 app.UseRouting();
+
+app.UseDefaultFiles(); // Note! index.html in the wwwroot
+app.UseStaticFiles();  // Enable CSS, JS, images, etc. in the wwwroot
 
 app.UseAuthentication(); // Note! This should come first before 'UseAuthorization'
 app.UseAuthorization();
@@ -77,6 +96,7 @@ app.UseEndpoints(endPoints =>
 {
     _ = endPoints.MapControllers();
     _ = endPoints.MapHub<ChatHub>("/chat");
+    _ = endPoints.MapFallbackToController("Index", "Fallback"); // Serve React assets via FallbackController
 });
 
 await app.RunAsync();
